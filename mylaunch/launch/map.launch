@@ -1,0 +1,4 @@
+<launch>
+ <include file="$(find bringup)/launch/3Dmap.launch"/>
+ <include file="$(find bringup)/launch/laserscan_gmap.launch"/>
+</launch>

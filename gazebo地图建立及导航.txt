@@ -1,0 +1,74 @@
+gazebo 安装
+http://blog.csdn.net/zhangrelay/article/details/74356137
+turtlebot 安装
+http://wiki.ros.org/Robots/TurtleBot
+http://blog.csdn.net/hongliang2009/article/details/73274966
+http://wiki.ros.org/turtlebot/Tutorials/indigo/Turtlebot%20Installation#turtlebot.2BAC8-Tutorials.2BAC8-indigo.2BAC8-Debs_Installation.Debs_Installation
+教程
+http://www.ncnynl.com/archives/201609/808.html
+源码
+https://github.com/turtlebot/turtlebot
+利用gazebo建立地图并实现导航
+一．建立地图
+roslaunch turtlebot_gazebo turtlebot_world.launch world_file:=<full path to the world file>　打开gazebo载入地图
+roslaunch turtlebot_gazebo gmapping_demo.launch　　　启动地图建设
+roslaunch turtlebot_rviz_launchers view_navigation.launch　地图建设可视化
+roslaunch turtlebot_teleop keyboard_teleop.launch利用键盘控制小车移动
+rosrun map_server map_saver -f　map.yaml将建立好的地图存放
+二．执行导航
+roslaunch turtlebot_gazebo turtlebot_world.launch　启动gazebo
+roslaunch turtlebot_gazebo amcl_demo.launch map_file:=<full path to map yaml file>　　载入地图
+roslaunch turtlebot_rviz_launchers view_navigation.launch 启动rviz
+在rviz　利用2D Nav Goal设定导航目标
+三.编码定点导航
+roslaunch turtlebot_gazebo turtlebot_world.launch　启动gazebo
+roslaunch turtlebot_gazebo amcl_demo.launch map_file:=<full path to map yaml file>　　载入地图
+roslaunch turtlebot_rviz_launchers view_navigation.launch 启动rviz
+执行写好的python脚本，python里面有position参数
+四．固定路径行驶
+roslaunch turtlebot_gazebo turtlebot_world.launch　启动gazebo
+执行脚本具体参见draw_a_square.py
+五．模拟环境的三维地图建立
+roslaunch turtlebot_gazebo turtlebot_world.launch　启动gazebo
+source ~/rgbdslam_ws/devel/setup.bash
+roslaunch rgbdslam openni+rgbdslam.launch
+
+六．kinect添加传感器
+http://blog.csdn.net/qq_36355662/article/details/61413860
+http://blog.csdn.net/qq_36355662/article/details/61616513
+
+
+
+发现效果不好，重新安装turtlebot对比配置即新增而不是修改，对博客做以下修改
+建立turtlebot_world_hokuyo.launch主要和博客区别在于
+<include file="$(find turtlebot_gazebo)/launch/includes/$(arg base).launch.xml">
+    <arg name="base" value="kobuki"/>
+    <arg name="stacks" value="hexagons"/>
+    <arg name="3d_sensor" value="KinectHokuyo"/>
+  </include>
+去掉fake_laser节点
+建立hokuyo.urdf.xacro
+<xacro:include filename="$(find turtlebot_description)/urdf/turtlebot_gazebo_hokuyo.urdf.xacro"/>
+新建turtlebot_gazebo_hokuyo.urdf.xacro文件按照博客里turtlebot_gazebo.urdf.xacro修改，但是输出信息的话题信息改为/scan
+不需要修改bashrc
+
+模型网址：
+http://models.gazebosim.org/
+
+七．velodyne　vlp16
+安装一个硬件模拟代码
+https://bitbucket.org/DataspeedInc/velodyne_simulator.git
+安装一个把硬件信息处理到ros的代码
+先安装libpcap sudo apt-get install libpcap-dev
+然后clone到工作目录下catkin_make https://github.com/ros-drivers/velodyne.git
+在turtlebot_gazebo的launch文件下编写文件turtlebot_world_velodyne.launch
+在turtlebot_description的robots下编写kobuki_hexagons_KinectVelodyne.urdf.xarco
+在/turtlebot_description/urdf/sensors下编写具体的硬件配置文件velodyne.urdf.xarco这个硬件信息直接调用安装的velodyne_simulator vlp16的描述信息，同时配置好了gazebo的插件信息
+？避障未解决
+
+
+
+
+
+
+

@@ -1,0 +1,74 @@
+1.配置libfreenect2和iai-kinect2  参考博客（http://blog.csdn.net/sunbibei/article/details/51594824）
+libfreenect2是从硬件获取源数据，iai-kinect2是将libfreenect2获取的源数据在ros中发布
+以/kinect2/qhd/image_color_rect发布彩色数据
+以/kinect2/qhd/image_depth_rect发布深度数据
+以/kinect2/qhd/camera_info发布摄像头相关数据
+配置好之后可以获得点云图片但是只限于静止的状态
+问题：cmake问题，如果出现相关环境变量not fount比如LIBUSB_LIBRARY has been used in this project but set to not found 一般情况表示未安装相关配置，这条信息表示libusb未安装，虽然按照博客里可以直接从download的软件中可以解压安装libusb但是这里还是要手动下载libusb源码安装，https://sourceforge.net/projects/libusb/files/libusb-1.0/libusb-1.0.20/　　　　　　　cmake，make，make install三步，make install的时候如果权限不够加一个sudo
+安装好之后运行示例可能会提示 permission denied情况这时要用root权限，终端输入su -输入密码即可，如果以前未开过root权限那么要设置root密码 sudo passwd root输入密码之后再su -。根据提示denied的信息也可以更改具体文件的权限，比如显示libusb denied可以chmod 777 /dev/lib/usb开放相关文件读写权限，但是建议直接su -
+
+2.三维地图建立
+
+建议kinect1用rgbdslam或者rtabmap，kinect2只用rtabmap，（kinect2下的rgbdslam效果极差）
+对于rgbdslam，参考博客 https://www.cnblogs.com/voyagee/articles/6898278.html
+如果要使用kinect2用rgbdslam参考http://blog.csdn.net/zhuoyueljl/article/details/78536996?reload
+			https://answers.ros.org/question/230412/solved-slam-with-kinect2/
+kinect2使用rgbdslam可能会出现pcl的问题，对于ubuntu16.04需要1.8以上的问题，同时cmake可能会出现c++11编译的问题，可以在cmake后面加参数 -DCMAKE_CXX11=ON 或者修改cmakelist文件，加上set语句，其中还会出先g2o和pcl冲突问题具体上面参考博客链接
+
+对于rtabmap参考http://www.ncnynl.com/archives/201703/1420.html，
+我在做的时候出现了库依赖的问题，处理的时候发现找不到libopencv_core3.so.3.3怀疑是cvsba的问题，所以卸载了cvsba重新编译包，成功。后来在github源码上发现给出了一种对于share_libraries的解决方案https://github.com/introlab/rtabmap_ros，加一条环境变量。
+
+运行的时候对于kinect2开启不同终端依次输入以下语句，参考博客http://blog.csdn.net/sean_xyz/article/details/65445038
+roslaunch kinect2_bridge kinect2_bridge.launch 
+rosrun tf static_transform_publisher 0 0 0 -1.5707963267948966 0 -1.5707963267948966 camera_link kinect2_rgb_optical_frame  100  
+roslaunch rtabmap_ros rgbd_mapping.launch rtabmap_args:="--delete_db_on_start" rgb_topic:=/kinect2/qhd/image_color_rect depth_registered_topic:=/kinect2/qhd/image_depth_rect camera_info_topic:=/kinect2/qhd/camera_info
+或者自己编写一个launch文件
+示例运行的时候就开始录制，退出的时候会把文件存在~/.ros/rtabmap.db处
+运行命令rtabmap-databaseViewer ~/.ros/rtabmap.db即可查看详细信息http://wiki.ros.org/rtabmap_ros/Tutorials/HandHeldMapping
+如果要在rviz里查看一个方法是在rtabmap运行期间打开rviz添加pointcloud2 在topic中下拉选择好即可，另一种方法就是在rtabmap的gui上选择存储pcd数据，之后运行rosrun pcl_ros pcd_to_pointcloud quicksave.pcd
+此时再打开rviz 添加pointcloud2，添加topic
+3.二维地图建立
+rtabmap的map是三维地图的二维投影图
+先把kinect2的深度数据转化激光数据，再用gmap或者hector绘图。
+数据转换http://www.ncnynl.com/archives/201703/1420.html
+对于gmap按照上述链接的tf树编写相应的tf节点，并且运行的时候要先开3维地图接受odom数据再绘2维地图，但是此时还是缺少odom到base_link的转换
+对于参考的链接分析了一下base_controller里面的内容，里面的tf变换是实时的，从小车的串口内实时接受数据并发布odom_tran的tf转换，但是可以看到odom_tran和odom.pose是一致的所以，考虑修改rtabmap的源码，在OdometryROS.cpp里的５００行的代码添加相应的tf变换代码
+
+
+
+４．查看保存到地图
+２维ｙａｍｌ格式，在存在mymap.yaml和mymap.pmg的图像文件路径中执行命令
+ rosrun map_server map_server mymap.yaml
+在rviz里监听frame 为map
+３维，在存在ｃｌｏｕｄ.pcd的文件路径中执行命令
+rosrun pcl_ros pcd_to_pointcloud cloud.pcd
+在rviz里监听frame为base_link
+
+5.三维地图pcd文件过大解决方案
+利用rosbag    rosbag record -o kinect_file /rtabmap/cloud_map记录数据，然后rosbag play XXX.bag
+
+同时打开rviz建立监听pointcloud2的topic 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
