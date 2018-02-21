@@ -65,7 +65,8 @@ https://bitbucket.org/DataspeedInc/velodyne_simulator.git
 在turtlebot_description的robots下编写kobuki_hexagons_KinectVelodyne.urdf.xarco
 在/turtlebot_description/urdf/sensors下编写具体的硬件配置文件velodyne.urdf.xarco这个硬件信息直接调用安装的velodyne_simulator vlp16的描述信息，同时配置好了gazebo的插件信息
 ？避障未解决
-
+八.在gazebo里同时建立二维三维地图
+与kinect建立地图相似，不同的是采用rgbslam来建立三维地图
 
 
 
